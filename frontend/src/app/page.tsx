@@ -1,11 +1,69 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, BarChart2, Database, MessageSquare, Sparkles, Code, Zap, User } from "lucide-react";
 import { useAuth } from "@/utils/AuthContext";
 
 export default function LandingPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [showLoader, setShowLoader] = useState(true);
+
+  useEffect(() => {
+    // Show 3D loader for 2 seconds on initial visit
+    const timer = setTimeout(() => setShowLoader(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showLoader) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-[#faf9f7] dark:bg-[#101111] flex flex-col items-center justify-center overflow-hidden">
+        <style>{`
+          .cube-loader {
+            width: 70px;
+            height: 70px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: spinCube 2.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          .cube-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #2bc574;
+            background: rgba(43, 197, 116, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 15px rgba(43, 197, 116, 0.15);
+            backdrop-filter: blur(4px);
+          }
+          .face-front  { transform: translateZ(35px); }
+          .face-back   { transform: rotateY(180deg) translateZ(35px); }
+          .face-right  { transform: rotateY(90deg) translateZ(35px); }
+          .face-left   { transform: rotateY(-90deg) translateZ(35px); }
+          .face-top    { transform: rotateX(90deg) translateZ(35px); }
+          .face-bottom { transform: rotateX(-90deg) translateZ(35px); }
+          @keyframes spinCube {
+            0% { transform: rotateX(0deg) rotateY(0deg) scale(0.8); }
+            50% { transform: rotateX(180deg) rotateY(180deg) scale(1.2); }
+            100% { transform: rotateX(360deg) rotateY(360deg) scale(0.8); }
+          }
+        `}</style>
+        <div className="cube-loader">
+          <div className="cube-face face-front"><BarChart2 className="text-[#2bc574]" size={28} /></div>
+          <div className="cube-face face-back"><Database className="text-[#2bc574]" size={28} /></div>
+          <div className="cube-face face-right"><Sparkles className="text-[#2bc574]" size={28} /></div>
+          <div className="cube-face face-left"><Zap className="text-[#2bc574]" size={28} /></div>
+          <div className="cube-face face-top"></div>
+          <div className="cube-face face-bottom"></div>
+        </div>
+        <div className="mt-16 text-[#2bc574] font-bold text-sm tracking-[0.3em] uppercase animate-pulse">
+          Initializing Engine
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#faf9f7] dark:bg-[#101111] text-[#1a1816] dark:text-[#ffffff] font-sans selection:bg-[#2bc574]/20">
@@ -31,7 +89,7 @@ export default function LandingPage() {
           </div>
           
           <div className="flex items-center gap-4">
-            {!loading && user ? (
+            {!authLoading && user ? (
               <>
                 <div className="flex items-center gap-2 animate-fade-in bg-neutral-100 dark:bg-[#1c2823] px-3 py-1.5 rounded-full border border-neutral-200 dark:border-[#24352f]">
                   {user.photoURL ? (

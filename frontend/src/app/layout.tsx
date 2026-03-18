@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/utils/AuthContext";
+import Script from "next/script";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -29,6 +30,33 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className="antialiased" suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
+
+        {/* Global Google Translate Widget */}
+        <div 
+          id="google_translate_element" 
+          className="fixed bottom-4 left-4 z-[99999] opacity-70 hover:opacity-100 transition-opacity bg-white/70 dark:bg-[#121715]/90 backdrop-blur rounded overflow-hidden" 
+        />
+        
+        <Script
+          id="google-translate-init"
+          strategy="afterInteractive"
+        >
+          {`
+            function googleTranslateElementInit() {
+              new window.google.translate.TranslateElement(
+                {
+                  pageLanguage: 'en',
+                  layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
+                }, 
+                'google_translate_element'
+              );
+            }
+          `}
+        </Script>
+        <Script
+          src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
