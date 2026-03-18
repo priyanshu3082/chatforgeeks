@@ -83,6 +83,21 @@ def get_schema():
     return {"tables": schema}
 
 
+class ExecuteRequest(BaseModel):
+    sql: str
+
+@app.post("/execute")
+def execute_sql(req: ExecuteRequest):
+    """
+    Run a raw SQL query directly — NO LLM call, no Claude API cost.
+    Used by the default dashboard for pre-built fixed queries.
+    """
+    result = execute_query(req.sql)
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+    return {"columns": result["columns"], "rows": result["rows"], "count": result["count"]}
+
+
 @app.post("/query", response_model=QueryResponse)
 def run_query(req: QueryRequest):
     """

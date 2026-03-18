@@ -12,7 +12,9 @@ import {
   GoogleAuthProvider,
   OAuthProvider
 } from "firebase/auth";
-import { Sparkles, Command, Activity, Home } from "lucide-react";
+import { Sparkles, Command, Activity, BarChart2, ArrowRight } from "lucide-react";
+import Link from "next/link";
+
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -71,24 +73,36 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#101111] text-[#1a1816] dark:text-[#ffffff] flex items-center justify-center p-6 selection:bg-[#2bc574]/20 relative overflow-hidden">
-      
-      {/* Animated doodle background elements */}
-      <div className="absolute top-1/4 left-1/4 text-[#2bc574]/10 animate-pulse">
-        <Activity size={120} strokeWidth={1} />
-      </div>
-      <div className="absolute bottom-1/4 right-1/4 text-[#2bc574]/10 animate-bounce duration-3000">
-        <Command size={100} strokeWidth={1} />
-      </div>
-      
-      {/* Back to Home Button */}
-      <button 
-        onClick={() => router.push("/")}
-        className="absolute top-6 left-6 flex items-center gap-2 text-neutral-500 hover:text-[#2bc574] transition-colors z-20"
-      >
-        <Home size={18} />
-        <span className="text-sm font-medium">Home</span>
-      </button>
+    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#101111] text-[#1a1816] dark:text-[#ffffff] flex flex-col selection:bg-[#2bc574]/20">
+
+      {/* ── Navbar ── */}
+      <nav className="border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-[#121715]/90 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#2bc574] to-[#22a862] flex items-center justify-center text-white">
+              <BarChart2 size={18} />
+            </div>
+            <span>ChatForGeeks</span>
+          </Link>
+          <div className="hidden md:flex items-center gap-8 font-medium text-sm text-neutral-600 dark:text-[#8b9993]">
+            <Link href="/" className="hover:text-[#2bc574] transition-colors">Home</Link>
+            <Link href="/#features" className="hover:text-[#2bc574] transition-colors">Features</Link>
+            <Link href="/#team" className="hover:text-[#2bc574] transition-colors">Team</Link>
+          </div>
+          <Link href="/dashboard" className="text-sm font-semibold bg-[#1a1816] dark:bg-[#2bc574] text-white dark:text-black px-5 py-2 rounded-full hover:bg-[#2bc574] dark:hover:bg-[#22a862] hover:text-black transition-all shadow-sm flex items-center gap-2">
+            Dashboard <ArrowRight size={14} />
+          </Link>
+        </div>
+      </nav>
+
+      {/* ── Body ── */}
+      <div className="flex-1 flex items-center justify-center p-6 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 text-[#2bc574]/10 animate-pulse pointer-events-none">
+          <Activity size={120} strokeWidth={1} />
+        </div>
+        <div className="absolute bottom-1/4 right-1/4 text-[#2bc574]/10 animate-bounce pointer-events-none">
+          <Command size={100} strokeWidth={1} />
+        </div>
 
       <div className="w-full max-w-md bg-white dark:bg-[#121715] p-8 rounded-2xl shadow-2xl border border-neutral-200 dark:border-[#1c2823] relative z-10">
         <div className="flex flex-col items-center mb-8">
@@ -196,6 +210,35 @@ export default function LoginPage() {
           </button>
         </div>
       </div>
+      </div>
+
+      {/* ── Footer ── */}
+      <footer className="border-t border-black/5 dark:border-[#1c2823] bg-white/50 dark:bg-[#101111] py-5">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-neutral-500 dark:text-[#8b9993]">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-gradient-to-br from-[#2bc574] to-[#22a862] flex items-center justify-center">
+              <BarChart2 size={11} className="text-white" />
+            </div>
+            <span className="font-semibold text-[#1a1816] dark:text-white">ChatForGeeks</span>
+            <span className="mx-1">·</span>
+            <span>© 2026 All rights reserved.</span>
+          </div>
+          <div className="flex items-center gap-1 flex-wrap justify-center">
+            Built with <span className="text-red-500 mx-1">♥</span> by
+            <span className="font-semibold text-[#2bc574] mx-1">AI Champs</span>–
+            <a href="https://www.linkedin.com/in/priyanshu-nayan/" target="_blank" rel="noopener noreferrer" className="hover:text-[#2bc574] transition-colors ml-1">Priyanshu</a>
+            <span className="mx-1">·</span>
+            <a href="https://www.linkedin.com/in/saurav-kumar-b5baaa386/" target="_blank" rel="noopener noreferrer" className="hover:text-[#2bc574] transition-colors">Saurav</a>
+            <span className="mx-1">·</span>
+            <a href="https://www.linkedin.com/in/soumalya-bhar-599562392/" target="_blank" rel="noopener noreferrer" className="hover:text-[#2bc574] transition-colors">Soumalya</a>
+          </div>
+          <div className="flex gap-4">
+            <Link href="/" className="hover:text-[#2bc574] transition-colors">Home</Link>
+            <Link href="/#team" className="hover:text-[#2bc574] transition-colors">Team</Link>
+            <Link href="/dashboard" className="hover:text-[#2bc574] transition-colors">Dashboard</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import ChatInput from "@/components/ChatInput";
 import MessageBubble from "@/components/MessageBubble";
 import UploadPanel from "@/components/UploadPanel";
 import SchemaPanel from "@/components/SchemaPanel";
+import DefaultDashboard from "@/components/DefaultDashboard";
 import {
   BarChart2,
   Database,
@@ -65,6 +66,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<"schema" | "upload">("schema");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
@@ -106,9 +108,10 @@ export default function Dashboard() {
       if (activeTable === tableName) {
         setActiveTable(null);
       }
-      loadSchema(); // Refresh schema after deletion
-    } catch (e: any) {
-      alert(e.response?.data?.detail || "Failed to delete table");
+      loadSchema();
+    } catch (e: unknown) {
+      const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      alert(detail || "Failed to delete table");
       console.error(e);
     }
   };
@@ -117,6 +120,7 @@ export default function Dashboard() {
   }
 
   const handleQuery = async (prompt: string) => {
+    setShowDashboard(false);
     const userMsg: ChatMessage = {
       id: uuidv4(), role: "user", content: prompt, timestamp: new Date(),
     };
@@ -147,17 +151,16 @@ export default function Dashboard() {
   const handleClear = async () => {
     try { await clearSession(sessionId); } catch { }
     setMessages([]);
+    setShowDashboard(true);
   };
 
   const handleUploadSuccess = async (result: UploadResponse) => {
     await loadSchema();
     setActiveTable(result.table_name);
     setActiveTab("schema");
-    setMessages((p) => [...p, {
-      id: uuidv4(), role: "assistant",
-      content: `Uploaded **${result.table_name}** (${result.rows_loaded.toLocaleString()} rows, ${result.columns.length} columns). You can now query this table!`,
-      timestamp: new Date(),
-    }]);
+    // Show the static dashboard for the new table — NO Claude API call
+    setMessages([]);
+    setShowDashboard(true);
   };
 
   return (
@@ -225,7 +228,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--sidebar-muted)", marginBottom: 10 }}>
-                  Upload CSV
+                  Upload File
                 </div>
                 <UploadPanel onUploadSuccess={handleUploadSuccess} />
               </>
@@ -363,21 +366,19 @@ export default function Dashboard() {
 
         {/* Messages */}
         <div className="messages-area">
-          {messages.length === 0 ? (
-            /* ── Hero ── */
+          {showDashboard && messages.length === 0 ? (
+            /* ── Default BI Dashboard ── */
+            <DefaultDashboard tableName={activeTable || "sales"} onQueryClick={handleQuery} />
+          ) : messages.length === 0 ? (
+            /* ── Hero (fallback) ── */
             <div className="hero animate-fade-in">
               <div className="hero-icon">
                 <BarChart2 size={26} color="white" />
               </div>
-
               <h1 className="hero-title">Ask your data anything</h1>
               <p className="hero-sub" style={{marginBottom: "30px"}}>
-                Type a business question in plain English. Claude AI generates SQL,
+                Type a business question in plain English. The AI generates SQL,
                 runs it, and builds an interactive chart instantly.
-              </p>
-
-              <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 8 }}>
-                Type your question below ↓
               </p>
             </div>
           ) : (
