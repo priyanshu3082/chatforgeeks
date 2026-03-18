@@ -5,7 +5,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 120000,
+  timeout: 180000,
 });
 
 export async function sendQuery(
@@ -26,7 +26,7 @@ export async function getSchema(): Promise<SchemaResponse> {
   return data;
 }
 
-export async function uploadCSV(file: File): Promise<UploadResponse> {
+export async function uploadFile(file: File): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
   const { data } = await api.post<UploadResponse>("/upload", formData, {
@@ -37,4 +37,8 @@ export async function uploadCSV(file: File): Promise<UploadResponse> {
 
 export async function clearSession(sessionId: string): Promise<void> {
   await api.delete(`/session/${sessionId}`);
+}
+
+export async function deleteTable(tableName: string): Promise<void> {
+  await api.delete(`/table/${tableName}`);
 }

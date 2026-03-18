@@ -5,10 +5,12 @@ from pydantic import BaseModel
 from typing import Optional
 import uvicorn
 
-from database import seed_sample_data, execute_query, get_schema_info
+from database import seed_sample_data, execute_query, get_schema_info, delete_table
 from llm_engine import query_llm
 from chart_selector import select_chart
-from csv_loader import process_csv_upload
+from csv_loader import process_file_upload
+from report_generator import generate_pdf_report
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="ChatForGeeks API",
@@ -23,6 +25,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+os.makedirs("static", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # In-memory conversation store (keyed by session_id)
 conversation_store: dict[str, list[dict]] = {}
@@ -45,6 +50,8 @@ class QueryResponse(BaseModel):
     explanation: Optional[str]
     error_message: Optional[str]
     charts: list[dict]
+    follow_up_questions: Optional[list[str]] = None
+    download_url: Optional[str] = None
 
 
 class SchemaResponse(BaseModel):
@@ -95,6 +102,7 @@ def run_query(req: QueryRequest):
     sql_query = llm_result.get("sql_query")
     explanation = llm_result.get("explanation")
     chart_hint = llm_result.get("chart_recommendation")
+    follow_up_questions = llm_result.get("follow_up_questions", [])
 
     if error_message or not sql_query:
         history.append({"role": "assistant", "content": error_message or "No SQL generated."})
@@ -105,6 +113,8 @@ def run_query(req: QueryRequest):
             explanation=explanation,
             error_message=error_message or "I cannot answer this question based on available data.",
             charts=[],
+            follow_up_questions=follow_up_questions,
+            download_url=None,
         )
 
     # Execute SQL
@@ -119,6 +129,8 @@ def run_query(req: QueryRequest):
             explanation=explanation,
             error_message=f"Query execution failed: {err}",
             charts=[],
+            follow_up_questions=follow_up_questions,
+            download_url=None,
         )
 
     columns = db_result["columns"]
@@ -133,6 +145,8 @@ def run_query(req: QueryRequest):
             explanation=explanation,
             error_message="No data found for your query.",
             charts=[],
+            follow_up_questions=follow_up_questions,
+            download_url=None,
         )
 
     # Select chart
@@ -157,6 +171,8 @@ def run_query(req: QueryRequest):
         explanation=explanation,
         error_message=None,
         charts=[chart],
+        follow_up_questions=follow_up_questions,
+        download_url=generate_pdf_report(sql_query, explanation, rows),
     )
 
 
@@ -168,17 +184,39 @@ def clear_session(session_id: str):
 
 
 @app.post("/upload")
-async def upload_csv(file: UploadFile = File(...)):
-    """Upload a CSV file and auto-create a SQLite table."""
-    if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Only CSV files are supported.")
+async def upload_file(file: UploadFile = File(...)):
+    """Upload a file and auto-create a SQLite table."""
+    valid_extensions = (".csv", ".json", ".xls", ".xlsx")
+    filename_lower = file.filename.lower()
+    
+    if not any(filename_lower.endswith(ext) for ext in valid_extensions):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported file type. Supported types: {', '.join(valid_extensions)}"
+        )
+
+    # get extension
+    import os
+    _, ext = os.path.splitext(filename_lower)
 
     content = await file.read()
-    result = process_csv_upload(content, file.filename)
+    result = process_file_upload(content, file.filename, ext)
 
     if result.get("error"):
+        import traceback
         raise HTTPException(status_code=422, detail=result["error"])
 
+    return result
+
+@app.delete("/table/{table_name}")
+def remove_table(table_name: str):
+    """Delete a table from the database."""
+    if table_name.lower() == "sales":
+        raise HTTPException(status_code=400, detail="Cannot delete the default 'sales' table.")
+    
+    result = delete_table(table_name)
+    if result.get("error"):
+        raise HTTPException(status_code=500, detail=result["error"])
     return result
 
 

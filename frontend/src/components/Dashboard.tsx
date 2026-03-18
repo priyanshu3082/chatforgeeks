@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { ChatMessage, SchemaResponse, UploadResponse } from "@/types";
-import { sendQuery, getSchema, clearSession } from "@/utils/api";
+import { sendQuery, getSchema, clearSession, deleteTable } from "@/utils/api";
 import ChatInput from "@/components/ChatInput";
 import MessageBubble from "@/components/MessageBubble";
 import UploadPanel from "@/components/UploadPanel";
@@ -20,7 +20,14 @@ import {
   Moon,
   Zap,
   Sparkles,
+  LogOut,
+  Home,
+  User,
 } from "lucide-react";
+import { useAuth } from "@/utils/AuthContext";
+import { useRouter } from "next/navigation";
+import { auth } from "@/utils/firebase";
+import { signOut } from "firebase/auth";
 
 /* ── Typing indicator ── */
 function TypingIndicator() {
@@ -43,15 +50,12 @@ function TypingIndicator() {
   );
 }
 
-/* ── Hero suggestions ── */
-const SUGGESTIONS = [
-  { q: "Show monthly revenue trend", emoji: "📈", label: "Revenue Trend", desc: "Visualize revenue over time" },
-  { q: "Compare revenue by region", emoji: "🗺️", label: "By Region", desc: "Regional performance breakdown" },
-  { q: "Which product category performs best?", emoji: "🏆", label: "Top Category", desc: "Find your best performers" },
-  { q: "Revenue vs profit scatter", emoji: "💡", label: "Profitability", desc: "Correlation analysis" },
-];
+/* ── Hero suggestions (removed by request) ── */
 
 export default function Dashboard() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(() => uuidv4());
@@ -66,6 +70,12 @@ export default function Dashboard() {
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
     const saved = localStorage.getItem("bi-theme") as "light" | "dark" | null;
     if (saved) setTheme(saved);
   }, []);
@@ -75,15 +85,36 @@ export default function Dashboard() {
     localStorage.setItem("bi-theme", theme);
   }, [theme]);
 
-  useEffect(() => { loadSchema(); }, []);
+  useEffect(() => { if (user) loadSchema(); }, [user]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   const loadSchema = async () => {
-    try { setSchema(await getSchema()); } catch { }
+    try {
+      const s = await getSchema();
+      setSchema(s);
+    } catch (e) {
+      console.error(e);
+    }
   };
+
+  const handleDeleteTable = async (tableName: string) => {
+    try {
+      await deleteTable(tableName);
+      if (activeTable === tableName) {
+        setActiveTable(null);
+      }
+      loadSchema(); // Refresh schema after deletion
+    } catch (e: any) {
+      alert(e.response?.data?.detail || "Failed to delete table");
+      console.error(e);
+    }
+  };
+  if (loading || !user) {
+    return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--content-bg)" }}>Loading...</div>;
+  }
 
   const handleQuery = async (prompt: string) => {
     const userMsg: ChatMessage = {
@@ -184,7 +215,12 @@ export default function Dashboard() {
                     <RefreshCw size={11} />
                   </button>
                 </div>
-                <SchemaPanel schema={schema} activeTable={activeTable} onSelectTable={setActiveTable} />
+                <SchemaPanel
+                  schema={schema}
+                  activeTable={activeTable}
+                  onSelectTable={setActiveTable}
+                  onDeleteTable={handleDeleteTable}
+                />
               </>
             ) : (
               <>
@@ -254,7 +290,39 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="header-actions">
+          <div className="header-actions" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            
+            {/* User Profile Badge */}
+            {user && (
+              <div 
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--sidebar-muted)]/30 bg-[var(--sidebar-muted)]/10"
+                title={user.email || "Logged In"}
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="Profile" className="w-5 h-5 rounded-full" />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-[var(--accent)] text-[#121715] flex items-center justify-center">
+                    <User size={12} strokeWidth={3} />
+                  </div>
+                )}
+                <span className="text-xs font-medium max-w-[120px] truncate opacity-90">
+                  {user.displayName || user.email?.split("@")[0] || "User"}
+                </span>
+              </div>
+            )}
+
+            <div className="h-4 w-px bg-[var(--sidebar-muted)]/30 mx-1 hidden sm:block"></div>
+
+            {/* Home */}
+            <button
+              onClick={() => router.push("/")}
+              className="btn btn-ghost"
+              style={{ gap: 5, fontSize: 12, padding: "5px 10px" }}
+              title="Go to Homepage"
+            >
+              <Home size={13} /> Home
+            </button>
+
             {/* Theme toggle */}
             <button
               id="theme-toggle-btn"
@@ -279,6 +347,17 @@ export default function Dashboard() {
               <Trash2 size={12} />
               Clear
             </button>
+
+            {/* Logout */}
+            <button
+              onClick={() => signOut(auth)}
+              className="btn btn-ghost"
+              style={{ gap: 5, fontSize: 12, padding: "5px 10px" }}
+              title="Sign Out"
+            >
+              <LogOut size={12} />
+              Logout
+            </button>
           </div>
         </header>
 
@@ -292,34 +371,19 @@ export default function Dashboard() {
               </div>
 
               <h1 className="hero-title">Ask your data anything</h1>
-              <p className="hero-sub">
+              <p className="hero-sub" style={{marginBottom: "30px"}}>
                 Type a business question in plain English. Claude AI generates SQL,
                 runs it, and builds an interactive chart instantly.
               </p>
 
-              <div className="hero-cards">
-                {SUGGESTIONS.map(({ q, emoji, label, desc }) => (
-                  <button
-                    key={q}
-                    className="hero-card"
-                    onClick={() => handleQuery(q)}
-                    disabled={isLoading}
-                  >
-                    <span className="hero-card-emoji">{emoji}</span>
-                    <div className="hero-card-label">{label}</div>
-                    <div className="hero-card-desc">{desc}</div>
-                  </button>
-                ))}
-              </div>
-
-              <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
-                Or type your own question below ↓
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 8 }}>
+                Type your question below ↓
               </p>
             </div>
           ) : (
             messages.map((msg) => (
               <div key={msg.id} className="message-row">
-                <MessageBubble message={msg} />
+                <MessageBubble message={msg} onSuggestionClick={handleQuery} />
               </div>
             ))
           )}

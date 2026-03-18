@@ -2,11 +2,12 @@
 
 import { ChatMessage } from "@/types";
 import ChartRenderer from "./ChartRenderer";
-import { BarChart2, User, AlertTriangle, Code2, ChevronDown, ChevronUp, Copy, Check } from "lucide-react";
+import { BarChart2, User, AlertTriangle, Code2, ChevronDown, ChevronUp, Copy, Check, Download } from "lucide-react";
 import { useState } from "react";
 
 interface MessageBubbleProps {
   message: ChatMessage;
+  onSuggestionClick?: (q: string) => void;
 }
 
 function SQLToggle({ sql }: { sql: string }) {
@@ -54,7 +55,7 @@ function SQLToggle({ sql }: { sql: string }) {
   );
 }
 
-export default function MessageBubble({ message }: MessageBubbleProps) {
+export default function MessageBubble({ message, onSuggestionClick }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const resp = message.queryResponse;
 
@@ -115,6 +116,64 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               <ChartRenderer key={i} chart={chart} index={i} />
             ))}
           </div>
+        )}
+
+        {/* Follow Up Questions */}
+        {resp?.follow_up_questions && resp.follow_up_questions.length > 0 && (
+          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 2 }}>
+              Related Questions
+            </div>
+            {resp.follow_up_questions.map((q, i) => (
+              <button
+                key={i}
+                onClick={() => onSuggestionClick?.(q)}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--content-border)",
+                  borderRadius: 6,
+                  padding: "6px 10px",
+                  fontSize: 12,
+                  color: "var(--accent)",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  transition: "background 0.2s, color 0.2s",
+                }}
+                className="hover-bg-surface hover-border-accent"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Download PDF block */}
+        {resp?.download_url && (
+            <div style={{ marginTop: 14 }}>
+              <a
+                href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${resp.download_url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "var(--accent)",
+                  color: "#fff",
+                  textDecoration: "none",
+                  padding: "8px 14px",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  boxShadow: "var(--shadow-sm)",
+                  transition: "background 0.2s"
+                }}
+                className="hover-bg-accent-hover"
+              >
+                <Download size={14} />
+                Download Report (PDF)
+              </a>
+            </div>
         )}
 
         {/* Timestamp */}

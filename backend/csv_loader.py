@@ -2,14 +2,14 @@ import os
 import uuid
 import shutil
 from pathlib import Path
-from database import load_csv_to_db
+from database import load_file_to_db
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 
-def process_csv_upload(file_content: bytes, original_filename: str) -> dict:
-    """Save uploaded CSV and load it into the database."""
+def process_file_upload(file_content: bytes, original_filename: str, file_ext: str) -> dict:
+    """Save uploaded file and load it into the database."""
     # Generate a safe table name from filename
     stem = Path(original_filename).stem
     table_name = "".join(c if c.isalnum() else "_" for c in stem).lower()[:50]
@@ -21,7 +21,7 @@ def process_csv_upload(file_content: bytes, original_filename: str) -> dict:
     temp_path.write_bytes(file_content)
 
     try:
-        result = load_csv_to_db(str(temp_path), table_name)
+        result = load_file_to_db(str(temp_path), table_name, file_ext)
     finally:
         if temp_path.exists():
             temp_path.unlink()

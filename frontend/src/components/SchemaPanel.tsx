@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { SchemaResponse } from "@/types";
-import { Database, ChevronDown, ChevronRight, Table2 } from "lucide-react";
+import { Database, ChevronDown, ChevronRight, Table2, Trash2 } from "lucide-react";
 
 interface Props {
   schema: SchemaResponse | null;
   activeTable: string | null;
   onSelectTable: (t: string | null) => void;
+  onDeleteTable: (t: string) => void;
 }
 
-export default function SchemaPanel({ schema, activeTable, onSelectTable }: Props) {
+export default function SchemaPanel({ schema, activeTable, onSelectTable, onDeleteTable }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggle = (name: string) => {
@@ -63,21 +64,46 @@ export default function SchemaPanel({ schema, activeTable, onSelectTable }: Prop
                 }
               </button>
 
-              {/* Table row */}
-              <button
-                onClick={() => onSelectTable(isActive ? null : name)}
+              {/* Delete button wrapper */}
+              <div 
                 className={`schema-table-row ${isActive ? "active" : ""}`}
-                style={{ flex: 1 }}
+                style={{ flex: 1, display: "flex", alignItems: "center", paddingRight: "4px", minWidth: 0 }}
               >
-                <Table2 size={11} style={{ color: isActive ? "#e8d9c0" : "var(--sidebar-icon)", flexShrink: 0 }} />
-                <span style={{ flex: 1, textAlign: "left", fontWeight: isActive ? 600 : 400 }}>{name}</span>
-                <span style={{
-                  fontSize: 10, background: "rgba(255,255,255,0.06)", borderRadius: 99,
-                  padding: "1px 6px", color: "var(--sidebar-muted)", fontWeight: 600,
-                }}>
-                  {cols.length}
-                </span>
-              </button>
+                {/* Table row */}
+                <button
+                  onClick={() => onSelectTable(isActive ? null : name)}
+                  style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", color: "inherit", textAlign: "left", minWidth: 0 }}
+                >
+                  <Table2 size={11} style={{ color: isActive ? "#e8d9c0" : "var(--sidebar-icon)", flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontWeight: isActive ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{name}</span>
+                  <span style={{
+                    fontSize: 10, background: "rgba(255,255,255,0.06)", borderRadius: 99,
+                    padding: "1px 6px", color: "var(--sidebar-muted)", fontWeight: 600, flexShrink: 0
+                  }}>
+                    {cols.length}
+                  </span>
+                </button>
+
+                {/* Delete action */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Are you sure you want to delete table '${name}'?`)) {
+                      onDeleteTable(name);
+                    }
+                  }}
+                  title="Delete Table"
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "var(--sidebar-muted)", padding: "4px", borderRadius: "4px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    marginLeft: "4px", flexShrink: 0
+                  }}
+                  className="hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
             </div>
 
             {/* Columns */}

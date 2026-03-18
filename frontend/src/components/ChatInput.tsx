@@ -9,15 +9,6 @@ interface ChatInputProps {
   placeholder?: string;
 }
 
-const CHIPS = [
-  "Show monthly revenue trend",
-  "Compare revenue by region",
-  "Which product category performs best?",
-  "Top 5 regions by profit",
-  "Revenue vs profit scatter",
-  "Quarterly profit breakdown",
-];
-
 export default function ChatInput({ onSubmit, isLoading, placeholder }: ChatInputProps) {
   const [input, setInput] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -45,20 +36,6 @@ export default function ChatInput({ onSubmit, isLoading, placeholder }: ChatInpu
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {/* Chips */}
-      <div className="chips-row">
-        {CHIPS.map((q) => (
-          <button
-            key={q}
-            disabled={isLoading}
-            className="chip"
-            onClick={() => { setInput(q); ref.current?.focus(); }}
-          >
-            {q}
-          </button>
-        ))}
-      </div>
-
       {/* Input box */}
       <div className="input-box">
         <textarea

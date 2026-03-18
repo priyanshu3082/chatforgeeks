@@ -6,8 +6,23 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, TooltipProps,
 } from "recharts";
 import { ChartData } from "@/types";
-import { BarChart2, TrendingUp, Activity, PieChart as PieIcon, Zap, Maximize2, Minimize2 } from "lucide-react";
+import { BarChart2, TrendingUp, Activity, PieChart as PieIcon, Zap, Maximize2, Minimize2, Download } from "lucide-react";
 import { useState } from "react";
+
+const exportCSV = (data: Record<string, unknown>[], columns: string[], title: string) => {
+  if (!data || data.length === 0) return;
+  const headers = columns.join(",");
+  const rows = data.map(row => columns.map(col => `"${String(row[col] ?? '').replace(/"/g, '""')}"`).join(","));
+  const csv = [headers, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${title || "export"}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 const PALETTE = [
   "#d97706", "#7c3aed", "#0891b2", "#059669",
@@ -181,6 +196,17 @@ export default function ChartRenderer({ chart, index }: { chart: ChartData; inde
             {ICONS[chart_type] || <BarChart2 size={13} />}
             {chart_type}
           </span>
+          <button
+            onClick={() => exportCSV(data, chart.columns, title)}
+            style={{
+              width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center",
+              border: "1px solid var(--content-border)", borderRadius: 7, background: "transparent",
+              cursor: "pointer", color: "var(--text-muted)", transition: "all 0.15s",
+            }}
+            title="Export CSV"
+          >
+            <Download size={12} />
+          </button>
           <button
             onClick={() => setExpanded((e) => !e)}
             style={{

@@ -15,6 +15,8 @@ export interface QueryResponse {
   explanation?: string | null;
   error_message?: string | null;
   charts: ChartData[];
+  follow_up_questions?: string[];
+  download_url?: string;
 }
 
 export interface ChatMessage {

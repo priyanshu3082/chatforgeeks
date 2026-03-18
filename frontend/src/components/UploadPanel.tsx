@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { CloudUpload, X, FileText, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
-import { uploadCSV } from "@/utils/api";
+import { uploadFile } from "@/utils/api";
 import { UploadResponse } from "@/types";
 
 interface Props {
@@ -18,12 +18,14 @@ export default function UploadPanel({ onUploadSuccess }: Props) {
   const ref = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
-    if (!file.name.endsWith(".csv")) { setError("Only .csv files supported."); return; }
+    const validExts = [".csv", ".json", ".xls", ".xlsx"];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    if (!validExts.includes(ext)) { setError("Only .csv, .json, and .xlsx files supported."); return; }
     setUploading(true); setError(null); setResult(null); setProgress(0);
 
     const t = setInterval(() => setProgress((p) => Math.min(p + 15, 88)), 200);
     try {
-      const res = await uploadCSV(file);
+      const res = await uploadFile(file);
       clearInterval(t); setProgress(100);
       setTimeout(() => { setResult(res); onUploadSuccess(res); setProgress(0); }, 400);
     } catch (e: unknown) {
@@ -45,7 +47,7 @@ export default function UploadPanel({ onUploadSuccess }: Props) {
         onClick={() => ref.current?.click()}
         style={{ cursor: uploading ? "default" : "pointer" }}
       >
-        <input ref={ref} type="file" accept=".csv" className="hidden" id="csv-upload-input"
+        <input ref={ref} type="file" accept=".csv,.json,.xls,.xlsx" className="hidden" id="csv-upload-input"
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
 
         {uploading ? (
@@ -60,9 +62,9 @@ export default function UploadPanel({ onUploadSuccess }: Props) {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
             <CloudUpload size={22} style={{ color: dragging ? "#d97706" : "var(--sidebar-muted)" }} />
             <p style={{ fontSize: 12, color: "var(--sidebar-text)" }}>
-              {dragging ? "Drop it!" : <>Drop a <strong style={{ color: "#d97706" }}>.csv</strong> or click</>}
+              {dragging ? "Drop it!" : <>Drop a <strong style={{ color: "#d97706" }}>.csv, .json, or excel file</strong> or click</>}
             </p>
-            <p style={{ fontSize: 10, color: "var(--sidebar-muted)" }}>Any CSV file with headers</p>
+            <p style={{ fontSize: 10, color: "var(--sidebar-muted)" }}>Any tabular data file with headers</p>
           </div>
         )}
       </div>

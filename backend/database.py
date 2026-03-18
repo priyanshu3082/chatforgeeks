@@ -108,12 +108,20 @@ def execute_query(sql: str) -> dict:
         return {"error": str(e), "columns": [], "rows": [], "count": 0}
 
 
-def load_csv_to_db(file_path: str, table_name: str) -> dict:
-    """Load a CSV file into a SQLite table."""
+def load_file_to_db(file_path: str, table_name: str, file_ext: str) -> dict:
+    """Load a CSV, JSON, or Excel file into a SQLite table."""
     try:
-        df = pd.read_csv(file_path)
+        if file_ext == ".csv":
+            df = pd.read_csv(file_path)
+        elif file_ext in [".xls", ".xlsx"]:
+            df = pd.read_excel(file_path)
+        elif file_ext == ".json":
+            df = pd.read_json(file_path)
+        else:
+            return {"error": "Unsupported file format."}
+
         # Sanitize column names
-        df.columns = [c.strip().lower().replace(" ", "_").replace("-", "_") for c in df.columns]
+        df.columns = [str(c).strip().lower().replace(" ", "_").replace("-", "_") for c in df.columns]
         df.to_sql(table_name, engine, if_exists="replace", index=False)
 
         inspector = inspect(engine)
@@ -126,5 +134,15 @@ def load_csv_to_db(file_path: str, table_name: str) -> dict:
             "columns": schema,
             "preview": df.head(5).to_dict(orient="records"),
         }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def delete_table(table_name: str) -> dict:
+    """Drop a table from the sqlite database."""
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(f"DROP TABLE IF EXISTS {table_name}"))
+        return {"status": "success", "message": f"Table '{table_name}' deleted."}
     except Exception as e:
         return {"error": str(e)}

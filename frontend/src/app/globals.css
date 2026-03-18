@@ -62,20 +62,36 @@
 
 /* ─── Dark mode ─── */
 html.dark {
-  --content-bg: #211f1c;
-  --content-surface: #2a2825;
-  --content-border: rgba(255, 255, 255, 0.08);
+  --sidebar-bg: #101111;
+  --sidebar-hover: #1c2823;
+  --sidebar-active: #24352f;
+  --sidebar-text: #ffffff;
+  --sidebar-muted: #8b9993;
+
+  --content-bg: #101111;
+  --content-surface: #121715;
+  --content-border: #1c2823;
   --content-divider: rgba(255, 255, 255, 0.05);
-  --text-primary: #e8e2d8;
-  --text-secondary: #a09890;
-  --text-muted: #6b6560;
-  --text-placeholder: #5a5550;
-  --bubble-user-bg: #2f2d2a;
-  --bubble-user-text: #e8e2d8;
-  --bubble-ai-bg: #252320;
-  --bubble-ai-text: #e8e2d8;
-  --input-bg: #2a2825;
-  --input-border: rgba(255, 255, 255, 0.1);
+  
+  --text-primary: #ffffff;
+  --text-secondary: #c4d1cb;
+  --text-muted: #8b9993;
+  --text-placeholder: #5a6660;
+  
+  --accent: #2bc574;
+  --accent-light: rgba(43, 197, 116, 0.1);
+  --accent-hover: #22a862;
+  --accent-subtle: rgba(43, 197, 116, 0.08);
+
+  --bubble-user-bg: #1c2823;
+  --bubble-user-text: #ffffff;
+  --bubble-ai-bg: #121715;
+  --bubble-ai-text: #ffffff;
+  
+  --input-bg: #121715;
+  --input-border: #1c2823;
+  --input-focus: #2bc574;
+  
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -649,7 +665,7 @@ html.dark .sql-block-header {
   line-height: 1.55;
   min-height: 24px;
   max-height: 180px;
-  padding: 2px 0;
+  padding: 6px 0;
 }
 
 .input-textarea::placeholder {
@@ -704,9 +720,9 @@ html.dark .chip {
 }
 
 html.dark .chip:hover:not(:disabled) {
-  border-color: #d97706;
-  background: rgba(217, 119, 6, 0.1);
-  color: #fbbf24;
+  border-color: #2bc574;
+  background: rgba(43, 197, 116, 0.1);
+  color: #2bc574;
 }
 
 /* Input hint */
