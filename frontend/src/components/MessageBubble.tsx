@@ -4,6 +4,7 @@ import { ChatMessage } from "@/types";
 import ChartRenderer from "./ChartRenderer";
 import { BarChart2, User, AlertTriangle, Code2, ChevronDown, ChevronUp, Copy, Check, Download } from "lucide-react";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -84,7 +85,23 @@ export default function MessageBubble({ message, onSuggestionClick }: MessageBub
         {/* Explanation */}
         {resp?.explanation && (
           <div className="bubble-ai-text">
-            <p>{resp.explanation}</p>
+            <ReactMarkdown
+              components={{
+                p: ({children}) => <p style={{ marginBottom: 8 }}>{children}</p>,
+                strong: ({children}) => <strong style={{ fontWeight: 700, color: "var(--text-primary)" }}>{children}</strong>,
+                em: ({children}) => <em style={{ fontStyle: "italic" }}>{children}</em>,
+                ul: ({children}) => <ul style={{ paddingLeft: 18, marginBottom: 8 }}>{children}</ul>,
+                ol: ({children}) => <ol style={{ paddingLeft: 18, marginBottom: 8 }}>{children}</ol>,
+                li: ({children}) => <li style={{ marginBottom: 4, lineHeight: 1.6 }}>{children}</li>,
+                h1: ({children}) => <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: "var(--text-primary)" }}>{children}</h1>,
+                h2: ({children}) => <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, color: "var(--text-primary)" }}>{children}</h2>,
+                h3: ({children}) => <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>{children}</h3>,
+                code: ({children}) => <code style={{ background: "var(--content-divider)", padding: "1px 5px", borderRadius: 4, fontFamily: "monospace", fontSize: 12 }}>{children}</code>,
+                blockquote: ({children}) => <blockquote style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 10, color: "var(--text-secondary)", marginBottom: 8 }}>{children}</blockquote>,
+              }}
+            >
+              {resp.explanation}
+            </ReactMarkdown>
             {resp.sql_query && <SQLToggle sql={resp.sql_query} />}
           </div>
         )}
@@ -105,7 +122,7 @@ export default function MessageBubble({ message, onSuggestionClick }: MessageBub
         {/* Plain text */}
         {!resp && (
           <div className="bubble-ai-text">
-            <p>{message.content}</p>
+            <ReactMarkdown>{message.content}</ReactMarkdown>
           </div>
         )}
 
