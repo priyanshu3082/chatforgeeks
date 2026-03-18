@@ -1,5 +1,5 @@
 export interface ChartData {
-  chart_type: "bar" | "line" | "area" | "pie" | "scatter";
+  chart_type: "bar" | "line" | "area" | "pie" | "scatter" | "heatmap";
   x_axis: string;
   y_axis: string;
   color_key?: string | null;

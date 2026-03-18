@@ -164,20 +164,24 @@ def run_query(req: QueryRequest):
             download_url=None,
         )
 
-    # Select chart
+    # Select chart base properties
     chart_meta = select_chart(columns, rows, chart_hint)
 
-    chart = {
-        "chart_type": chart_meta["chart_type"],
-        "x_axis": chart_meta["x_axis"],
-        "y_axis": chart_meta["y_axis"],
-        "color_key": chart_meta.get("color_key"),
-        "title": chart_meta["title"],
-        "data": rows,
-        "columns": columns,
-    }
+    all_chart_types = ["bar", "line", "area", "pie", "scatter"]
+    generated_charts = []
+    
+    for c_type in all_chart_types:
+        generated_charts.append({
+            "chart_type": c_type,
+            "x_axis": chart_meta["x_axis"],
+            "y_axis": chart_meta["y_axis"],
+            "color_key": chart_meta.get("color_key"),
+            "title": f"{chart_meta['title']} ({c_type.title()} View)",
+            "data": rows,
+            "columns": columns,
+        })
 
-    history.append({"role": "assistant", "content": explanation or f"Generated {chart_meta['chart_type']} chart."})
+    history.append({"role": "assistant", "content": explanation or "Generated all analytical chart views."})
 
     return QueryResponse(
         session_id=session_id,
@@ -185,9 +189,9 @@ def run_query(req: QueryRequest):
         sql_query=sql_query,
         explanation=explanation,
         error_message=None,
-        charts=[chart],
+        charts=generated_charts,
         follow_up_questions=follow_up_questions,
-        download_url=generate_pdf_report(sql_query, explanation, rows),
+        download_url=generate_pdf_report(sql_query, explanation, rows, generated_charts),
     )
 
 

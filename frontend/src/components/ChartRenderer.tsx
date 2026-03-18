@@ -3,10 +3,10 @@
 import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line,
   AreaChart, Area, PieChart, Pie, Cell, ScatterChart, Scatter,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, TooltipProps,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, TooltipProps, Treemap,
 } from "recharts";
 import { ChartData } from "@/types";
-import { BarChart2, TrendingUp, Activity, PieChart as PieIcon, Zap, Maximize2, Minimize2, Download } from "lucide-react";
+import { BarChart2, TrendingUp, Activity, PieChart as PieIcon, Zap, Maximize2, Minimize2, Download, LayoutGrid } from "lucide-react";
 import { useState } from "react";
 
 const exportCSV = (data: Record<string, unknown>[], columns: string[], title: string) => {
@@ -36,6 +36,7 @@ const ICONS: Record<string, React.ReactNode> = {
   bar: <BarChart2 size={13} />,
   pie: <PieIcon size={13} />,
   scatter: <Zap size={13} />,
+  heatmap: <LayoutGrid size={13} />,
 };
 
 type TT = TooltipProps<number, string> & {
@@ -64,7 +65,7 @@ const CustomTooltip = ({ active, payload, label }: TT) => {
       {payload.map((p, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < payload.length - 1 ? 3 : 0 }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, display: "inline-block" }} />
-          <span style={{ color: "var(--text-muted)" }}>{p.name}:</span>
+          <span style={{ color: "var(--text-muted)" }}>{p.name ? String(p.name).replace(/_/g, ' ').replace(/\b\w/g, match => match.toUpperCase()) : ''}:</span>
           <span style={{ color: "var(--text-primary)", fontWeight: 600, marginLeft: "auto" }}>
             {typeof p.value === "number"
               ? p.value.toLocaleString(undefined, { maximumFractionDigits: 2 })
@@ -76,14 +77,19 @@ const CustomTooltip = ({ active, payload, label }: TT) => {
   );
 };
 
+function prettyStr(str: string) {
+  if (!str) return '';
+  return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function fmt(v: unknown) {
   if (typeof v === "number") {
     if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
     if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
     return v.toFixed(0);
   }
-  const s = String(v);
-  return s.length > 11 ? s.slice(0, 9) + "…" : s;
+  const pretty = prettyStr(String(v));
+  return pretty.length > 15 ? pretty.slice(0, 13) + "…" : pretty;
 }
 
 export default function ChartRenderer({ chart, index }: { chart: ChartData; index: number }) {
@@ -111,7 +117,7 @@ export default function ChartRenderer({ chart, index }: { chart: ChartData; inde
             <YAxis tick={axisStyle} tickFormatter={fmt} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={legend} />
-            <Line type="monotone" dataKey={y_axis} stroke={`url(#ll-${index})`} strokeWidth={2}
+            <Line type="monotone" dataKey={y_axis} name={prettyStr(y_axis)} stroke={`url(#ll-${index})`} strokeWidth={2}
               dot={{ r: 3, fill: "#d97706" }} activeDot={{ r: 5 }} />
           </LineChart>
         );
@@ -129,7 +135,7 @@ export default function ChartRenderer({ chart, index }: { chart: ChartData; inde
             <YAxis tick={axisStyle} tickFormatter={fmt} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={legend} />
-            <Area type="monotone" dataKey={y_axis} stroke="#d97706" strokeWidth={2} fill={`url(#af-${index})`} />
+            <Area type="monotone" dataKey={y_axis} name={prettyStr(y_axis)} stroke="#d97706" strokeWidth={2} fill={`url(#af-${index})`} />
           </AreaChart>
         );
       case "bar":
@@ -148,7 +154,7 @@ export default function ChartRenderer({ chart, index }: { chart: ChartData; inde
             <YAxis tick={axisStyle} tickFormatter={fmt} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={legend} />
-            <Bar dataKey={y_axis} radius={[4, 4, 0, 0]} maxBarSize={56}>
+            <Bar dataKey={y_axis} name={prettyStr(y_axis)} radius={[4, 4, 0, 0]} maxBarSize={56}>
               {data.map((_, i) => (
                 <Cell key={i} fill={`url(#bg-${index}-${i % PALETTE.length})`} />
               ))}
@@ -162,7 +168,7 @@ export default function ChartRenderer({ chart, index }: { chart: ChartData; inde
             <Legend wrapperStyle={legend} />
             <Pie data={data} dataKey={y_axis} nameKey={x_axis}
               cx="50%" cy="50%" innerRadius="30%" outerRadius="60%" paddingAngle={3}
-              label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+              label={({ name, percent }) => `${prettyStr(String(name))} ${((percent ?? 0) * 100).toFixed(0)}%`}
               labelLine={{ stroke: "var(--text-muted)" }}
             >
               {data.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
@@ -173,11 +179,27 @@ export default function ChartRenderer({ chart, index }: { chart: ChartData; inde
         return (
           <ScatterChart {...props}>
             <CartesianGrid strokeDasharray="3 3" stroke={grid} />
-            <XAxis dataKey={x_axis} type="number" tick={axisStyle} tickFormatter={fmt} name={x_axis} axisLine={false} tickLine={false} />
-            <YAxis dataKey={y_axis} type="number" tick={axisStyle} tickFormatter={fmt} name={y_axis} axisLine={false} tickLine={false} />
+            <XAxis dataKey={x_axis} type="category" tick={axisStyle} tickFormatter={fmt} name={prettyStr(x_axis)} axisLine={false} tickLine={false} />
+            <YAxis dataKey={y_axis} type="number" tick={axisStyle} tickFormatter={fmt} name={prettyStr(y_axis)} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
-            <Scatter data={data} fill="#d97706" opacity={0.8} />
+            <Scatter name={prettyStr(y_axis)} data={data} fill="#d97706" opacity={0.8} />
           </ScatterChart>
+        );
+      case "heatmap":
+        const treemapData = data.map(d => ({
+          name: prettyStr(String(d[x_axis])),
+          value: Number(d[y_axis]) || 0,
+        }));
+        return (
+          <Treemap
+            data={treemapData}
+            dataKey="value"
+            aspectRatio={4 / 3}
+            stroke="var(--content-border)"
+            fill="#d97706"
+          >
+            <Tooltip content={<CustomTooltip />} />
+          </Treemap>
         );
       default:
         return <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Unknown chart: {chart_type}</div>;

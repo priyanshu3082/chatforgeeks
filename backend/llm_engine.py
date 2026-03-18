@@ -32,14 +32,14 @@ def build_system_prompt(schema: dict, conversation_history: list) -> str:
         schema_lines.append(f"Table {tbl}: {col_str}")
     schema_str = "\n".join(schema_lines)
 
-    # Keep only the last 2 turns (1 exchange) to save tokens
+    # Keep the ENTIRE conversation history in the prompt for perfect context retention
     history_str = ""
     if conversation_history:
-        recent = conversation_history[-2:]
-        history_str = "Recent:\n" + "\n".join(
-            f"{'U' if t['role'] == 'user' else 'A'}: {str(t['content'])[:120]}"
-            for t in recent
+        history_str = "Conversation History:\n" + "\n".join(
+            f"{'User' if t['role'] == 'user' else 'Assistant'}: {t['content']}"
+            for t in conversation_history
         )
+
 
     return f"""You are a BI SQL assistant. Convert questions to SQLite SQL.
 

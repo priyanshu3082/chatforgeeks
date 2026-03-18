@@ -39,6 +39,7 @@ def seed_sample_data():
         revenue = round(random.uniform(500, 50000), 2)
         profit = round(revenue * random.uniform(0.1, 0.45), 2)
         customers = random.randint(10, 500)
+        discount = round(random.uniform(0.0, 0.35), 2)
         rows.append({
             "id": i + 1,
             "date": d.isoformat(),
@@ -50,6 +51,7 @@ def seed_sample_data():
             "revenue": revenue,
             "profit": profit,
             "customer_count": customers,
+            "discount_percentage": discount,
         })
 
     df = pd.DataFrame(rows)
@@ -119,6 +121,18 @@ def load_file_to_db(file_path: str, table_name: str, file_ext: str) -> dict:
             df = pd.read_json(file_path)
         else:
             return {"error": "Unsupported file format."}
+
+        # Smart Header Detection: Fix garbage/shifted headers from Mac Numbers or corrupted exports
+        unnamed_count = sum(1 for c in df.columns if str(c).startswith("Unnamed"))
+        is_garbage_first = str(df.columns[0]).startswith("bplist") or str(df.columns[0]).startswith("PK")
+        
+        if unnamed_count > len(df.columns) * 0.4 or is_garbage_first:
+            for i in range(min(5, len(df))):
+                row_vals = df.iloc[i].dropna()
+                if len(row_vals) > len(df.columns) * 0.5:
+                    df.columns = df.iloc[i]
+                    df = df.iloc[i+1:].reset_index(drop=True)
+                    break
 
         # Sanitize column names
         df.columns = [str(c).strip().lower().replace(" ", "_").replace("-", "_") for c in df.columns]
