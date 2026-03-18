@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@types/uuid": "^11.0.0",
     "axios": "^1.13.6",
     "firebase": "^12.10.0",
     "firebase-admin": "^13.7.0",
