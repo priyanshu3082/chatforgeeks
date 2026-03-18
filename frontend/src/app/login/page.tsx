@@ -34,14 +34,17 @@ export default function LoginPage() {
   if (loading) return <div className="min-h-screen bg-[#101111] flex items-center justify-center text-white">Loading...</div>;
 
   const handleFirebaseError = (err: any) => {
-    console.error("Firebase Auth Error:", err);
     const code = err.code;
+    if (code !== "auth/cancelled-popup-request" && code !== "auth/popup-closed-by-user") {
+      console.error("Firebase Auth Error:", err);
+    }
+    
     if (code?.includes("api-key")) return "Invalid Firebase API key. You must add the Web App keys (like NEXT_PUBLIC_FIREBASE_API_KEY) to your .env.local file!";
     if (code === "auth/invalid-email") return "The email address is improperly formatted.";
     if (code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential") return "Invalid email or password.";
     if (code === "auth/email-already-in-use") return "This email is already registered.";
     if (code === "auth/weak-password") return "Password should be at least 6 characters.";
-    if (code === "auth/popup-closed-by-user") return "Sign in popup was closed.";
+    if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return "Sign in popup was closed.";
     if (code === "auth/operation-not-allowed") return "Email/Password sign-in is not enabled in Firebase Console.";
     return err.message || "An error occurred during authentication. Please try again.";
   };
